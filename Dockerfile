@@ -1,15 +1,26 @@
-# Use official Tomcat with Java 17
+# -------- Stage 1: Build WAR using Maven --------
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+
+WORKDIR /app
+
+# Copy all project files
+COPY . .
+
+# Build the WAR file
+RUN mvn clean package
+
+
+# -------- Stage 2: Run on Tomcat --------
 FROM tomcat:10.1-jdk17
 
-# Remove default Tomcat apps (optional but recommended)
+# Remove default apps
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Copy your WAR file into Tomcat
-# Make sure your WAR file name and path are correct
-COPY target/FLAMES.war /usr/local/tomcat/webapps/ROOT.war
+# Copy generated WAR from build stage
+COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
-# Expose Tomcat port
+# Expose port
 EXPOSE 8080
 
-# Start Tomcat server
+# Start Tomcat
 CMD ["catalina.sh", "run"]
